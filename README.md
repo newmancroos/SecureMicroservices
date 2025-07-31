@@ -10,6 +10,7 @@
   3. Add <pre>app.UseStaticFiles();</pre> in program.cs
   4. add
      <pre>
+      app.UseRouting();
       app.UseEndpoints(endpoints =>
       {
           endpoints.MapDefaultControllerRoute();
