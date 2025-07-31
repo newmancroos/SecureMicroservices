@@ -19,14 +19,5 @@
       app.MapRazorPages()
           .RequireAuthorization();
      </pre>  in to the program.cs file
-  4. Add <pre>app.UseStaticFiles();</pre> in program.cs
-  5. add
-     <pre>
-      app.UseRouting();
-      app.UseEndpoints(endpoints =>
-      {
-          endpoints.MapDefaultControllerRoute();
-      });
-     </pre>
-     
+  
      
