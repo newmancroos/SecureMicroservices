@@ -70,4 +70,19 @@
       app.UseAuthentication();
       app.UseAuthorization();
     </pre>
-    
+
+
+    ## For Logout, create a end-point method in any controller and content should be
+    <pre>
+            public async Task Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+
+        }
+    </pre>
+   To redirect automatically to our web page we need to set
+   <pre>
+     AutomaticRedirectAfterSignOut=true;
+   </pre>
+   in LogoutOptions class
