@@ -86,3 +86,16 @@
      AutomaticRedirectAfterSignOut=true;
    </pre>
    in LogoutOptions class
+
+
+<img width="671" height="377" alt="image" src="https://github.com/user-attachments/assets/03c8d447-538d-4433-8f6e-03cb9360b413" />
+
+
+<hr/>
+To communicate from MVC application to MovieApi we need to install <b>IdentityModel</b> Nuget package in MVC application.
+<pre>
+The IdentityModel NuGet package is a foundational library that provides helper classes for interacting with OpenID Connect and OAuth 2.0 endpoints. When working with Duende IdentityServer, you typically do not explicitly install IdentityModel as a separate package.
+Instead, IdentityModel is often brought in as a transitive dependency when you install other Duende IdentityServer packages. For example, when you install the Duende.IdentityServer package, it includes IdentityModel as a dependency, meaning it will be automatically installed alongside Duende.IdentityServer.
+  
+</pre>
+
