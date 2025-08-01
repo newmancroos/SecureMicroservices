@@ -92,10 +92,54 @@
 
 
 <hr/>
-To communicate from MVC application to MovieApi we need to install <b>IdentityModel</b> Nuget package in MVC application.
+To communicate from MVC application to MovieApi we need to install <b>Duende.IdentityModel and Duende.AccessTokenManagement</b> Nuget package in MVC application.
+and service class we can write the logic to fetch token from Identity server.
+
 <pre>
-The IdentityModel NuGet package is a foundational library that provides helper classes for interacting with OpenID Connect and OAuth 2.0 endpoints. When working with Duende IdentityServer, you typically do not explicitly install IdentityModel as a separate package.
-Instead, IdentityModel is often brought in as a transitive dependency when you install other Duende IdentityServer packages. For example, when you install the Duende.IdentityServer package, it includes IdentityModel as a dependency, meaning it will be automatically installed alongside Duende.IdentityServer.
   
+    //1. Get token from Identityserver, Need to provide url, clientId and Client-Secret
+    
+    var client = new HttpClient();
+    //Check if we can reach to discover document
+    
+    var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5005");
+    
+    if(disco.IsError)
+    {
+        throw new Exception($"Something went wrong while connecting to IdentityServer: {disco.Error}");
+    }
+    
+    var response = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
+    {
+        Address = "https://localhost:5005/connect/token",
+        ClientId = "movieApiClient",
+        ClientSecret = "secret",
+        Scope = "movieApi"
+    });
+    
+    if(response.IsError)
+    {
+        throw new Exception($"Something went wrong while requesting token: {response.Error}");
+    }
+    
+    //2. Call the API with the token
+    
+    var apiClient = new HttpClient();
+    apiClient.SetBearerToken(response.AccessToken);
+    
+    //3. Get the response and deserialize it to a list of movies
+    var apiResponse = await apiClient.GetAsync("https://localhost:5001/api/movies");
+    if (!apiResponse.IsSuccessStatusCode)
+    {
+        throw new Exception($"Something went wrong while calling the API: {apiResponse.ReasonPhrase}");
+    }
+    apiResponse.EnsureSuccessStatusCode();
+    
+    var movieContent= await apiResponse.Content.ReadAsStringAsync();
+    
+    //deserialize the response string to movie object
+    
+    List<Movie> movieList = JsonConvert.DeserializeObject<List<Movie>>(movieContent);
+    return movieList;
 </pre>
 
