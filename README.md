@@ -144,6 +144,6 @@ and service class we can write the logic to fetch token from Identity server.
 </pre>
 
 ### We can refactor the comue operation using HttpClientFactor: <br/>
-<u>What is DelegatingHandler?</u>
+<b>What is DelegatingHandler?</b><br/>
 A DelegatingHandler in ASP.NET Core is a specialized type of HTTP message handler that allows for the interception and manipulation of outgoing HTTP requests and incoming HTTP responses when using HttpClient. It functions similarly to middleware in the ASP.NET Core request pipeline, but specifically for client-side HTTP operations.<br/>
 
