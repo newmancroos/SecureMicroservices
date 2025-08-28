@@ -313,7 +313,9 @@ The client uses the received authorization code to make a direct, back-channel c
 **4. Receive Tokens:**
 .
 The authorization server validates the code and returns the access token and refresh token to the client. 
-Why Use Hybrid Flow?
+
+
+### Why Use Hybrid Flow?
 
 **Immediate User Identity:**
 .
@@ -329,11 +331,11 @@ It is the recommended flow for server-side web applications and native applicati
 ### Key Characteristics
 
 **Uses Both Front and Back Channels:**
-Combines browser-based front-channel communication with direct, secure server-to-server back-channel communication. 
-**Balance of Security and Responsiveness:**
-Offers a good balance by delivering identity information quickly and handling sensitive tokens more securely. 
-**Combination of Grant Types:**
+Combines browser-based front-channel communication with direct, secure server-to-server back-channel communication. <br/> <br/>
+**Balance of Security and Responsiveness:** <br/>
+Offers a good balance by delivering identity information quickly and handling sensitive tokens more securely.  <br/> <br/>
+**Combination of Grant Types:** <br/>
 Typically uses a code id_token or code token response type, combining aspects of the authorization code and implicit flows. 
-  
+
 </p>
 
