@@ -339,3 +339,8 @@ Typically uses a code id_token or code token response type, combining aspects of
 
 </p>
 
+
+<img width="679" height="387" alt="image" src="https://github.com/user-attachments/assets/fc42b17a-5b7b-483b-a510-85eb322e38f5" />
+
+
+
