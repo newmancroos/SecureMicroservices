@@ -1,17 +1,84 @@
 ﻿using Movies.Client.Models;
-
+using Duende.IdentityModel.Client;
+using Newtonsoft.Json;
+using System.Net.Http.Json;
+using System.Text;
+using Duende.AccessTokenManagement;
+using System.Security.Cryptography;
+using System;
 namespace Movies.Client.ApiServices;
 
 public class MovieApiService : IMovieApiService
 {
+    private readonly IHttpClientFactory _httpClientFactory;
+    public MovieApiService(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    }
     public async Task<IEnumerable<Movie>> GetMovies()
     {
-        var movieList = new List<Movie>()
-       {
-            new Movie{Id=1, Genre="Comics", Title="asd",Rating="9.2", ImageUrl="images/src", ReleaseDate=DateTime.Now, Owner="swn"  }
-       };
+        //Refactor code using HttpClientFactory
 
-        return await Task.FromResult(movieList);    
+        var httpClient = _httpClientFactory.CreateClient("MovieAPIClient");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/movies/");
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var movieContent = await response.Content.ReadAsStringAsync();
+
+        //deserialize the response string to movie object
+        List<Movie> movieList = JsonConvert.DeserializeObject<List<Movie>>(movieContent);
+        return movieList;
+
+        #region Old Code
+        /////Old Code
+        ////1. Get token from Identityserver, Need to provide url, clientId and Client-Secret
+
+        //var client = new HttpClient();
+        ////Check if we can reach to discover document
+
+        //var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5005");
+
+        //if(disco.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while connecting to IdentityServer: {disco.Error}");
+        //}
+
+        //var response = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
+        //{
+        //    Address = "https://localhost:5005/connect/token",
+        //    ClientId = "movieClient",
+        //    ClientSecret = "secret",
+        //    Scope = "movieAPI"
+        //});
+
+        //if(response.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while requesting token: {response.Error}");
+        //}
+
+        ////2. Call the API with the token
+
+        //var apiClient = new HttpClient();
+        //apiClient.SetBearerToken(response.AccessToken);
+
+        ////3. Get the response and deserialize it to a list of movies
+        //var apiResponse = await apiClient.GetAsync("https://localhost:5001/api/movies");
+        //if (!apiResponse.IsSuccessStatusCode)
+        //{
+        //    throw new Exception($"Something went wrong while calling the API: {apiResponse.ReasonPhrase}");
+        //}
+        //apiResponse.EnsureSuccessStatusCode();
+
+        //var movieContent= await apiResponse.Content.ReadAsStringAsync();
+
+        ////deserialize the response string to movie object
+
+        //List<Movie> movieList = JsonConvert.DeserializeObject<List<Movie>>(movieContent);
+        //return movieList;
+
+        #endregion
+
+
     }
 
     public Task<Movie> CreateMovies(Movie movie)
@@ -24,15 +91,37 @@ public class MovieApiService : IMovieApiService
         throw new NotImplementedException();
     }
 
-    public Task<Movie> GetMovie(int id)
+    public async  Task<Movie> GetMovie(int id)
     {
-        throw new NotImplementedException();
+        var httpClient = _httpClientFactory.CreateClient("MovieAPIClient");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/movies/{id}");
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var movieContent = await response.Content.ReadAsStringAsync();
+
+        //deserialize the response string to movie object
+        Movie movie = JsonConvert.DeserializeObject<Movie>(movieContent);
+        return movie;
     }
 
 
 
-    public Task<Movie> UpdateMovie(Movie movie)
+    public async Task<Movie> UpdateMovie(Movie movie)
     {
-        throw new NotImplementedException();
-    }
+        var httpClient = _httpClientFactory.CreateClient("MovieAPIClient");
+
+        var movieId = movie.Id;
+
+        var uri = "/api/movies/" + movieId;
+        var content = new StringContent(
+                    JsonConvert.SerializeObject(movie),
+                    Encoding.UTF8,
+                    "application/json"
+        );
+
+        var response = await httpClient.PutAsync(uri, content);
+
+        response.EnsureSuccessStatusCode();
+       
+        return movie;
 }
