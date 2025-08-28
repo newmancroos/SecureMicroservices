@@ -8,6 +8,14 @@ namespace IdentityServer;
 
 public class Config
 {
+    /// <summary>
+    /// Code flow and Client credential flow defined in the main branch so 
+    /// user access MVC and in side MVC we make a code flow call
+    /// to get the token and call API end-point.here we had two clients
+    /// In this Hybrid flow we use only one client that hold authentication 
+    /// and access token to call Api end-point.
+    /// Hybrid flow for interactive client, meaning Client application interactive with API authorization
+    /// </summary>
     public static IEnumerable<Client> Clients =>
         new Client[]
         {
@@ -25,7 +33,9 @@ public class Config
             {
                 ClientId="movies_mvc_clinet",
                 ClientName="Movies MVC Web App",
-                AllowedGrantTypes=GrantTypes.Code,
+                //AllowedGrantTypes=GrantTypes.Code,
+                AllowedGrantTypes=GrantTypes.Hybrid,  //becomes interactive client
+                RequirePkce=false,  // It need only for Code flow. It rquire authorization code base token request 
                 AllowRememberConsent=false,
                 RedirectUris= new List<string>()
                 {
@@ -42,7 +52,8 @@ public class Config
                 AllowedScopes= new List<string>()
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
-                    IdentityServerConstants.StandardScopes.Profile
+                    IdentityServerConstants.StandardScopes.Profile,
+                    "movieAPI"
                 }
             }
         };

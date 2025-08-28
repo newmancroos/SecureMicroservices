@@ -13,6 +13,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IMovieApiService, MovieApiService>();
 
 //Configure OpenIdConnect Here
+// Code updated for Hybrid flow:
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -24,9 +25,10 @@ builder.Services.AddAuthentication(options =>
     options.Authority = "https://localhost:5005"; // IdentityServer URL
     options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
     options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
-    options.ResponseType = "code"; // Use Authorization Code flow
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing Hybrid flow
     options.Scope.Add("openid"); // OpenID Connect scope
     options.Scope.Add("profile"); // Profile scope for user information
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of Hybrid flow*************
     options.SaveTokens = true; // Save tokens in the authentication properties
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
 });
