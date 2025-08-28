@@ -144,6 +144,147 @@ and service class we can write the logic to fetch token from Identity server.
 </pre>
 
 ### We can refactor the comue operation using HttpClientFactor: <br/>
+
 <b>What is DelegatingHandler?</b><br/>
 A DelegatingHandler in ASP.NET Core is a specialized type of HTTP message handler that allows for the interception and manipulation of outgoing HTTP requests and incoming HTTP responses when using HttpClient. It functions similarly to middleware in the ASP.NET Core request pipeline, but specifically for client-side HTTP operations.<br/>
+<pre>
+  using Duende.IdentityModel.Client;
+
+namespace Movies.Client.HttpHandlers;
+
+public class AuthenticationDelegatingHandler:DelegatingHandler
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ClientCredentialsTokenRequest _tokenRequest;
+
+    public AuthenticationDelegatingHandler(IHttpClientFactory httpClientFactory, ClientCredentialsTokenRequest tokenRequest)
+    {
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _tokenRequest = tokenRequest ?? throw new ArgumentNullException(nameof(tokenRequest));
+
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var httpClient = _httpClientFactory.CreateClient("IDPClient");
+        var tokenResponse = await httpClient.RequestClientCredentialsTokenAsync(_tokenRequest);
+
+        if(tokenResponse.IsError)
+        {
+            throw new Exception($"Something went wrong while requesting token: {tokenResponse.Error}");
+        }
+
+       
+        request.SetBearerToken(tokenResponse!.AccessToken!);
+
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
+</pre>
+
+In program.cs
+
+<pre>
+  builder.Services.AddHttpClient("MovieAPIClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5001");
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+}).AddHttpMessageHandler<AuthenticationDelegatingHandler>();
+
+//Configuraing HttpClient to access IDP
+
+builder.Services.AddHttpClient("IDPClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5005");
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+});
+
+builder.Services.AddSingleton(new ClientCredentialsTokenRequest
+{
+    Address = "https://localhost:5005/connect/token",
+    ClientId = "movieClient",
+    ClientSecret = "secret",
+    Scope = "movieAPI"
+});
+</pre>
+
+<pre>
+  public class MovieApiService : IMovieApiService
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    public MovieApiService(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    }
+    public async Task<IEnumerable<Movie>> GetMovies()
+    {
+        //Refactor code using HttpClientFactory
+
+        var httpClient = _httpClientFactory.CreateClient("MovieAPIClient");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/movies/");
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var movieContent = await response.Content.ReadAsStringAsync();
+
+        //deserialize the response string to movie object
+        List<Movie> movieList = JsonConvert.DeserializeObject<List<Movie>>(movieContent);
+        return movieList;
+
+        #region Old Code
+        /////Old Code
+        ////1. Get token from Identityserver, Need to provide url, clientId and Client-Secret
+
+        //var client = new HttpClient();
+        ////Check if we can reach to discover document
+
+        //var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5005");
+
+        //if(disco.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while connecting to IdentityServer: {disco.Error}");
+        //}
+
+        //var response = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
+        //{
+        //    Address = "https://localhost:5005/connect/token",
+        //    ClientId = "movieClient",
+        //    ClientSecret = "secret",
+        //    Scope = "movieAPI"
+        //});
+
+        //if(response.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while requesting token: {response.Error}");
+        //}
+
+        ////2. Call the API with the token
+
+        //var apiClient = new HttpClient();
+        //apiClient.SetBearerToken(response.AccessToken);
+
+        ////3. Get the response and deserialize it to a list of movies
+        //var apiResponse = await apiClient.GetAsync("https://localhost:5001/api/movies");
+        //if (!apiResponse.IsSuccessStatusCode)
+        //{
+        //    throw new Exception($"Something went wrong while calling the API: {apiResponse.ReasonPhrase}");
+        //}
+        //apiResponse.EnsureSuccessStatusCode();
+
+        //var movieContent= await apiResponse.Content.ReadAsStringAsync();
+
+        ////deserialize the response string to movie object
+
+        //List<Movie> movieList = JsonConvert.DeserializeObject<List<Movie>>(movieContent);
+        //return movieList;
+
+        #endregion
+
+   }
+
+</pre>
+
+
+DelegateHandler intercept the request and add token.<br/>
 
