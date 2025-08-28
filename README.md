@@ -317,6 +317,9 @@ The authorization server validates the code and returns the access token and ref
 
 ### Why Use Hybrid Flow?
 
+<img width="671" height="333" alt="image" src="https://github.com/user-attachments/assets/2736e4f0-9d07-4f7a-b979-abc815421811" />
+
+
 **Immediate User Identity:**
 .
 Provides quick access to user identity information via the ID token, which can be used by server-side web applications. 
