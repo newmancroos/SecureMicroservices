@@ -288,3 +288,52 @@ builder.Services.AddSingleton(new ClientCredentialsTokenRequest
 
 DelegateHandler intercept the request and add token.<br/>
 
+
+## Hybrid Flow
+
+**What is hybrid flow?**
+<p>
+  hybrid flow is an OpenID Connect (OIDC) authorization flow combining authorization code flow and implicit flow to provide a balance of security and immediate user identity access. It delivers an ID token (and an authorization code) over the front-channel (browser) for quick access to user identity, then uses the authorization code in a back-channel (direct HTTP request) to securely exchange for access and refresh tokens. This flow is recommended for server-side web applications and native mobile/desktop applications. 
+</p>
+
+<p>
+ ** How it Works**
+**1. Request an ID Token and Authorization Code:**
+.
+The client redirects the user to the authorization endpoint to request an ID token and an authorization code. 
+  
+**2. Receive Tokens/Code (Front-Channel):**
+.
+The authorization server returns the ID token and the authorization code to the browser via a redirect. 
+
+**3. Secure Token Exchange (Back-Channel):**
+.
+The client uses the received authorization code to make a direct, back-channel call to the authorization server's token endpoint. 
+
+**4. Receive Tokens:**
+.
+The authorization server validates the code and returns the access token and refresh token to the client. 
+Why Use Hybrid Flow?
+
+**Immediate User Identity:**
+.
+Provides quick access to user identity information via the ID token, which can be used by server-side web applications. 
+
+**Secure Access Tokens:**
+.
+Obtains long-lived access tokens and refresh tokens using a secure back-channel, preventing token leakage. 
+
+**Recommended for Specific Applications:**
+.
+It is the recommended flow for server-side web applications and native applications that need to access protected resources using access tokens. 
+### Key Characteristics
+
+**Uses Both Front and Back Channels:**
+Combines browser-based front-channel communication with direct, secure server-to-server back-channel communication. 
+**Balance of Security and Responsiveness:**
+Offers a good balance by delivering identity information quickly and handling sensitive tokens more securely. 
+**Combination of Grant Types:**
+Typically uses a code id_token or code token response type, combining aspects of the authorization code and implicit flows. 
+  
+</p>
+
