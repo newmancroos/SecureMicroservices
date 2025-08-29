@@ -422,4 +422,99 @@ PKCE verifies that the client requesting the token is the same one that initiate
 
 ### <ins> In Movie.Client MVC Project </ins>
 
-1. In program.cs, 
+1. In program.cs, in AddAuthentication block, **add id_token** on top of **code**
+2. In program.cs, in AddAuthentication block, add **Scope** "**movieAPI**" on top of **openid** and **profile**
+
+<pre>
+  builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "https://localhost:5005"; // IdentityServer URL
+    options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+    options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    options.Scope.Add("openid"); // OpenID Connect scope
+    options.Scope.Add("profile"); // Profile scope for user information
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+    options.SaveTokens = true; // Save tokens in the authentication properties
+    options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+});
+</pre>
+
+ 
+3.  Remove AddHttpClient("IDPClient") block and remove registering **ClientCredentialsTokenRequest** as we don't need call to Identity end-point
+<pre>
+//Configuraing HttpClient to access IDP
+
+//builder.Services.AddHttpClient("IDPClient", client =>
+//{
+//    client.BaseAddress = new Uri("https://localhost:5005");
+//    client.DefaultRequestHeaders.Clear();
+//    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+//});
+
+
+/// As we use hybrid flow we don;t need to call the IdentityServer end-point for token so we can remove the below code
+/// Instead we will use service.AddHttpContextAccessor() method to access the token
+/// 
+/*
+builder.Services.AddSingleton(new ClientCredentialsTokenRequest
+{
+    Address = "https://localhost:5005/connect/token",
+    ClientId = "movieClient",
+    ClientSecret = "secret",
+    Scope = "movieAPI"
+});
+*/
+</pre>
+
+5. In program.cs register HttpClient as the access token we can get it from here
+  <pre>
+    builder.Services.AddHttpContextAccessor();
+  </pre>
+  
+4. In **AuthenticationDelegatingHandler**  remove calls to IdentityServer end-point related codes and inject IHttpContextAccessor mand get the token and add it to the request
+<pre>
+  public class AuthenticationDelegatingHandler:DelegatingHandler
+{
+    //private readonly IHttpClientFactory _httpClientFactory;
+    //private readonly ClientCredentialsTokenRequest _tokenRequest;
+
+    //public AuthenticationDelegatingHandler(IHttpClientFactory httpClientFactory, ClientCredentialsTokenRequest tokenRequest)
+    //{
+    //    _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    //    _tokenRequest = tokenRequest ?? throw new ArgumentNullException(nameof(tokenRequest));
+    //}
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public AuthenticationDelegatingHandler(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        /// Due to ***Hybrid flow we don;t need to call IDP for token
+        
+        //var httpClient = _httpClientFactory.CreateClient("IDPClient");    
+        //var tokenResponse = await httpClient.RequestClientCredentialsTokenAsync(_tokenRequest);
+
+        //if (tokenResponse.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while requesting token: {tokenResponse.Error}");
+        //}
+        //request.SetBearerToken(tokenResponse!.AccessToken!);
+
+        var accessToeken  = await _httpContextAccessor!.HttpContext!.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
+</pre>
+
+
+
