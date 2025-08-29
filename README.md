@@ -380,3 +380,11 @@ It protects against authorization code interception attacks, where a malicious a
 PKCE verifies that the client requesting the token is the same one that initiated the authorization request, preventing impersonation
 
 
+## Changes on the existing code due to Hybrid flow:
+
+### <ins> In Identity Project </ins>
+  
+1. In IdentityProvider project, We don;t need two separate clients for Api and MVC.
+2. Chnage AllowedGrantTypes from GrantType.Code to GrantTypes.Hybrid
+3. Add RequirePkce = false as we don;t strckly check the challenge
+4. Add **movieApi** scops to AllowesScope to MVC client
