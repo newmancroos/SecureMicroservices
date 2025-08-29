@@ -346,4 +346,38 @@ Typically uses a code id_token or code token response type, combining aspects of
 <img width="679" height="387" alt="image" src="https://github.com/user-attachments/assets/fc42b17a-5b7b-483b-a510-85eb322e38f5" />
 
 
+## What does RequirePkce (Proff Key do?
+
+In IdentityServer, "Require PKCE" forces applications to use Proof Key for Code Exchange (PKCE) when using the Authorization Code Grant flow, adding a crucial layer of security for public clients (like mobile and single-page apps) by preventing authorization code interception attacks. The client generates a unique secret (code verifier) and a derived challenge, which the server verifies during token exchange, ensuring the same client that initiated the flow receives the access token. 
+How it Works 
+**1. Code Verifier & Challenge Creation:**
+Before starting the authorization request, the client creates a random string called a "code verifier". It then generates a base64-encoded hash of this verifier, called the "code challenge," which is sent to the authorization server.
+
+**2. Code Challenge Transmission:**
+The client sends the code challenge to the IdentityServer's authorization endpoint to obtain an authorization code.
+
+**3. PKCE Enforcement:**
+When the "Require PKCE" setting is enabled, the IdentityServer stores the received code challenge.
+
+**4. Token Exchange & Verification:**
+When the client exchanges the authorization code for an access token, it must also send the original, un-hashed "code verifier".
+
+**5. Security Check:**
+The IdentityServer verifies that the code verifier, when hashed and transformed, matches the code challenge it previously stored for that authorization code.
+
+**6. Token Issuance:**
+Only if the verifier and challenge match will the IdentityServer issue the access token; otherwise, the request is rejected.
+
+**Why It's Important**
+
+**Secures Public Clients:**
+.
+PKCE is vital for public clients (like single-page applications and native mobile apps) that cannot securely store client secrets. 
+Prevents Code Interception:
+.
+It protects against authorization code interception attacks, where a malicious application might capture an authorization code and use it to obtain an access token. 
+Ensures Client Authenticity:
+.
+PKCE verifies that the client requesting the token is the same one that initiated the authorization request, preventing impersonation
+
 
