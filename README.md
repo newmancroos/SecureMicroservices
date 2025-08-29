@@ -526,12 +526,13 @@ public class AuthenticationDelegatingHandler:DelegatingHandler
 </pre>
 
 5. FInally we need to change Claims based authorization in MovieAPI as we are using only one client and removed MovieApi Client
+   
    <pre>
      builder.Services.AddAuthorization(options=>
-{
-    //options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient")); // Due to hybrid flow and we are using one client for APi and MVC
-    options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movies_mvc_client"));
-});
+      {
+          //options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient")); // Due to hybrid flow and we are using one client for APi and MVC
+          options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movies_mvc_client"));
+      });
    </pre>
 
 
