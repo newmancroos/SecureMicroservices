@@ -480,7 +480,7 @@ builder.Services.AddSingleton(new ClientCredentialsTokenRequest
   
 4. In **AuthenticationDelegatingHandler**  remove calls to IdentityServer end-point related codes and inject IHttpContextAccessor mand get the token and add it to the request
 <pre>
-  public class AuthenticationDelegatingHandler:DelegatingHandler
+public class AuthenticationDelegatingHandler:DelegatingHandler
 {
     //private readonly IHttpClientFactory _httpClientFactory;
     //private readonly ClientCredentialsTokenRequest _tokenRequest;
@@ -511,6 +511,15 @@ builder.Services.AddSingleton(new ClientCredentialsTokenRequest
         //request.SetBearerToken(tokenResponse!.AccessToken!);
 
         var accessToeken  = await _httpContextAccessor!.HttpContext!.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+        if(!string.IsNullOrEmpty(accessToeken))
+        {
+            request.SetBearerToken(accessToeken);
+        }
+        else
+        {
+            throw new Exception("Access token is null or empty");
+        }
+
         return await base.SendAsync(request, cancellationToken);
     }
 }
