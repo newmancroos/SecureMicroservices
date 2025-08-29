@@ -371,13 +371,12 @@ Only if the verifier and challenge match will the IdentityServer issue the acces
 **Why It's Important**
 
 **Secures Public Clients:**
-.
-PKCE is vital for public clients (like single-page applications and native mobile apps) that cannot securely store client secrets. 
-Prevents Code Interception:
-.
+.PKCE is vital for public clients (like single-page applications and native mobile apps) that cannot securely store client secrets. 
+
+**Prevents Code Interception:**
 It protects against authorization code interception attacks, where a malicious application might capture an authorization code and use it to obtain an access token. 
-Ensures Client Authenticity:
-.
+
+**Ensures Client Authenticity:**
 PKCE verifies that the client requesting the token is the same one that initiated the authorization request, preventing impersonation
 
 
