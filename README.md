@@ -388,3 +388,38 @@ PKCE verifies that the client requesting the token is the same one that initiate
 2. Chnage AllowedGrantTypes from GrantType.Code to GrantTypes.Hybrid
 3. Add RequirePkce = false as we don;t strckly check the challenge
 4. Add **movieApi** scops to AllowesScope to MVC client
+   
+<pre>
+  new Client
+{
+    ClientId="movies_mvc_clinet",
+    ClientName="Movies MVC Web App",
+    //AllowedGrantTypes=GrantTypes.Code,
+    AllowedGrantTypes=GrantTypes.Hybrid,  //becomes interactive client
+    RequirePkce=false,  // It need only for Code flow. It rquire authorization code base token request 
+    AllowRememberConsent=false,
+    RedirectUris= new List<string>()
+    {
+        "https://localhost:5002/signin-oidc"
+    },
+    PostLogoutRedirectUris= new List<string>()
+    {
+        "https://localhost:5002/signout-callback-oidc"
+    },
+    ClientSecrets= new List<Secret>()
+    {
+        new Secret("secret".Sha256())
+    },
+    AllowedScopes= new List<string>()
+    {
+        IdentityServerConstants.StandardScopes.OpenId,
+        IdentityServerConstants.StandardScopes.Profile,
+        "movieAPI"
+    }
+}
+  
+</pre>
+
+### <ins> In Movie.Client MVC Project </ins>
+
+1. In program.cs, 
