@@ -536,4 +536,8 @@ public class AuthenticationDelegatingHandler:DelegatingHandler
    </pre>
 
 
+## Claim Based Authorization:
+
+<img width="1121" height="655" alt="image" src="https://github.com/user-attachments/assets/66fa8569-d9aa-4215-a6b4-4a3f467d0758" />
+
 
