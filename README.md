@@ -816,10 +816,10 @@ To allow rolebased authorization
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
 
     //Rolebased Authorization
-**    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    <b>options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
         NameClaimType = JwtClaimTypes.Name,
         RoleClaimType = JwtClaimTypes.Role
-    };**
+    };</b>
 });
    </pre>
