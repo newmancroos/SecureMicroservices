@@ -694,3 +694,73 @@ builder.Services.AddIdentityServer()
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
 });
 </pre>
+
+
+
+## Rolebased Authorization
+
+To allow rolebased authorization
+1. Need to add roles to the users
+  <pre>
+    new TestUser
+    {
+        SubjectId = "1",
+        Username = "alice",
+        Password = "a1",
+        Claims =
+        {
+            new Claim(JwtClaimTypes.Name, "Alice Smith"),
+            new Claim(JwtClaimTypes.GivenName, "Alice"),
+            new Claim(JwtClaimTypes.FamilyName, "Smith"),
+            new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
+            new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+            new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
+            new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json),
+            new Claim(JwtClaimTypes.Role, "user")
+        }
+    },
+         new TestUser
+     {
+         SubjectId = "2",
+         Username = "bob",
+         Password = "b1",
+         Claims =
+         {
+             new Claim(JwtClaimTypes.Name, "Bob Smith"),
+             new Claim(JwtClaimTypes.GivenName, "Bob"),
+             new Claim(JwtClaimTypes.FamilyName, "Smith"),
+             new Claim(JwtClaimTypes.Email, "BobSmith@email.com"),
+             new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+             new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
+             new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json),
+             new Claim(JwtClaimTypes.Role, "admin")
+         }
+     }
+  </pre>
+  
+2. Need to add **roles**  in Identity Resources
+  <pre>
+     public static IEnumerable<IdentityResource> IdentityResources=>
+     new IdentityResource[]
+     {
+         new IdentityResources.OpenId(),
+         new IdentityResources.Profile(),
+         new IdentityResources.Address(),
+         new IdentityResources.Email(),
+         new IdentityResource("roles","Your role(s)", new List<string>(){ "role"})
+     };
+  </pre>
+
+3. Add **roles** in Client's Allowed scopes
+
+   <pre>
+      AllowedScopes= new List<string>()
+       {
+           IdentityServerConstants.StandardScopes.OpenId,
+           IdentityServerConstants.StandardScopes.Profile,
+           "movieAPI",
+           IdentityServerConstants.StandardScopes.Address,
+           IdentityServerConstants.StandardScopes.Email,
+           "roles"
+       }
+   </pre>
