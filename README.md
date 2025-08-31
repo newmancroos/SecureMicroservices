@@ -786,6 +786,7 @@ To allow rolebased authorization
         options.Scope.Add("address"); // Address scope
         options.Scope.Add("email"); // Email scope
         <b>options.Scope.Add("roles");</b> // Adding roles scope**
+        <b>options.ClaimActions.MapUniqueJsonKey("role", "role");</b>
         options.SaveTokens = true; // Save tokens in the authentication properties
         options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
     });
@@ -812,6 +813,7 @@ To allow rolebased authorization
     options.Scope.Add("address"); // Address scope
     options.Scope.Add("email"); // Email scope
     options.Scope.Add("roles"); // Adding roles scope
+    <b>options.ClaimActions.MapUniqueJsonKey("role", "role");</b> // Map the "role" claim
     options.SaveTokens = true; // Save tokens in the authentication properties
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
 
