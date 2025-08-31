@@ -716,7 +716,7 @@ To allow rolebased authorization
             new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
             new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
             new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json),
-            new Claim(JwtClaimTypes.Role, "user")
+            <b>new Claim(JwtClaimTypes.Role, "user") </b>
         }
     },
          new TestUser
@@ -733,7 +733,7 @@ To allow rolebased authorization
              new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
              new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
              new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json),
-             new Claim(JwtClaimTypes.Role, "admin")
+             <b>new Claim(JwtClaimTypes.Role, "admin") </b>
          }
      }
   </pre>
@@ -747,7 +747,7 @@ To allow rolebased authorization
          new IdentityResources.Profile(),
          new IdentityResources.Address(),
          new IdentityResources.Email(),
-         new IdentityResource("roles","Your role(s)", new List<string>(){ "role"})
+         <b>new IdentityResource("roles","Your role(s)", new List<string>(){ "role"}) </b>
      };
   </pre>
 
@@ -761,7 +761,7 @@ To allow rolebased authorization
            "movieAPI",
            IdentityServerConstants.StandardScopes.Address,
            IdentityServerConstants.StandardScopes.Email,
-           "roles"
+           <b>"roles" </b>
        }
    </pre>
 4. Configure Role scope in the MVC Application
@@ -785,7 +785,7 @@ To allow rolebased authorization
     
         options.Scope.Add("address"); // Address scope
         options.Scope.Add("email"); // Email scope
-        **options.Scope.Add("roles"); // Adding roles scope**
+        <b>options.Scope.Add("roles");</b> // Adding roles scope**
         options.SaveTokens = true; // Save tokens in the authentication properties
         options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
     });
