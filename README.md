@@ -541,3 +541,129 @@ public class AuthenticationDelegatingHandler:DelegatingHandler
 <img width="1121" height="655" alt="image" src="https://github.com/user-attachments/assets/66fa8569-d9aa-4215-a6b4-4a3f467d0758" />
 
 
+- We may have multiple Claims for a user like below
+
+  <pre>
+    public static class TestUsers
+{
+    public static List<TestUser> Users
+    {
+        get
+        {
+            var address = new
+            {
+                street_address = "One Hacker Way",
+                locality = "Heidelberg",
+                postal_code = "69118",
+                country = "Germany"
+            };
+                
+            return new List<TestUser>
+            {
+                new TestUser
+                {
+                    SubjectId = "1",
+                    Username = "alice",
+                    Password = "a1",
+                    Claims =
+                    {
+                        new Claim(JwtClaimTypes.Name, "Alice Smith"),
+                        new Claim(JwtClaimTypes.GivenName, "Alice"),
+                        new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                        new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
+                        new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                        new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
+                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
+                    }
+                },
+                new TestUser
+                {
+                    SubjectId = "2",
+                    Username = "bob",
+                    Password = "b1",
+                    Claims =
+                    {
+                        new Claim(JwtClaimTypes.Name, "Bob Smith"),
+                        new Claim(JwtClaimTypes.GivenName, "Bob"),
+                        new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                        new Claim(JwtClaimTypes.Email, "BobSmith@email.com"),
+                        new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                        new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
+                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
+                    }
+                }
+            };
+        }
+    }
+}
+  </pre>
+but we need to change the Identity configuration for include these claim as part of the token.
+
+<pre>
+public static IEnumerable<Client> Clients =>
+    new Client[]
+    {
+        new Client
+        { 
+            ClientId="movieClient",
+            AllowedGrantTypes=GrantTypes.ClientCredentials,
+            ClientSecrets=
+            { 
+                new Secret("secret".Sha256())
+            },
+            AllowedScopes={"movieAPI"}
+        },
+          new Client
+          {
+              ClientId="movies_mvc_clinet",
+              ClientName="Movies MVC Web App",
+              //AllowedGrantTypes=GrantTypes.Code,
+              AllowedGrantTypes=GrantTypes.Hybrid,  //becomes interactive client
+              RequirePkce=false,  // It need only for Code flow. It rquire authorization code base token request 
+              AllowRememberConsent=false,
+              RedirectUris= new List<string>()
+              {
+                  "https://localhost:5002/signin-oidc"
+              },
+              PostLogoutRedirectUris= new List<string>()
+              {
+                  "https://localhost:5002/signout-callback-oidc"
+              },
+              ClientSecrets= new List<Secret>()
+              {
+                  new Secret("secret".Sha256())
+              },
+              AllowedScopes= new List<string>()
+              {
+                  IdentityServerConstants.StandardScopes.OpenId,
+                  IdentityServerConstants.StandardScopes.Profile,
+                  "movieAPI",
+                  IdentityServerConstants.StandardScopes.Address,
+                  IdentityServerConstants.StandardScopes.Email
+              }
+          }
+      };
+      public static IEnumerable<IdentityResource> IdentityResources=>
+        new IdentityResource[]
+        {
+            new IdentityResources.OpenId(),
+            new IdentityResources.Profile(),
+            new IdentityResources.Address(),
+            new IdentityResources.Email()
+        };
+</pre>
+
+Finally we need to map the Identity Server user to the new User class
+
+<pre>
+  // Add services to the container.
+builder.Services.AddIdentityServer()
+    .AddInMemoryClients(Config.Clients)
+    .AddInMemoryIdentityResources(Config.IdentityResources)
+    //.AddInMemoryApiResources(Config.ApiResources)
+    .AddInMemoryApiScopes(Config.ApiScopes)
+    //.AddTestUsers(Config.TestUsers)     //We created this user
+    .AddTestUsers(TestUsers.Users)   // Identity server automatically has these users
+    .AddDeveloperSigningCredential();  
+
+</pre>
