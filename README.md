@@ -653,8 +653,9 @@ public static IEnumerable<Client> Clients =>
         };
 </pre>
 
-Finally we need to map the Identity Server user to the new User class
+Finally we need to map the Identity Server user to the new User class in the Identity project, and alosin the MVC Client project we need to specify in the program.cs
 
+- Identity Project
 <pre>
   // Add services to the container.
 builder.Services.AddIdentityServer()
@@ -666,4 +667,30 @@ builder.Services.AddIdentityServer()
     .AddTestUsers(TestUsers.Users)   // Identity server automatically has these users
     .AddDeveloperSigningCredential();  
 
+</pre>
+
+- MVC Project
+<pre>
+  builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "https://localhost:5005"; // IdentityServer URL
+    options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+    options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    //options.Scope.Add("openid"); // OpenID Connect scope                      Thease claims automatically added by Identity server so we don;t want to specify here
+    //options.Scope.Add("profile"); // Profile scope for user information       Thease claims automatically added by Identity server so we don;t want to specify here
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+
+    options.Scope.Add("address"); // Address scope
+    options.Scope.Add("email"); // Email scope
+
+    options.SaveTokens = true; // Save tokens in the authentication properties
+    options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+});
 </pre>
