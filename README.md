@@ -700,7 +700,7 @@ builder.Services.AddIdentityServer()
 ## Rolebased Authorization
 
 To allow rolebased authorization
-1. Need to add roles to the users
+1. Need to add roles to the users (IdentityServier project)
   <pre>
     new TestUser
     {
@@ -738,7 +738,7 @@ To allow rolebased authorization
      }
   </pre>
   
-2. Need to add **roles**  in Identity Resources
+2. Need to add **roles**  in Identity Resources   (IdentityServier project)
   <pre>
      public static IEnumerable<IdentityResource> IdentityResources=>
      new IdentityResource[]
@@ -751,7 +751,7 @@ To allow rolebased authorization
      };
   </pre>
 
-3. Add **roles** in Client's Allowed scopes
+3. Add **roles** in Client's Allowed scopes   (IdentityServier project)
 
    <pre>
       AllowedScopes= new List<string>()
@@ -763,4 +763,63 @@ To allow rolebased authorization
            IdentityServerConstants.StandardScopes.Email,
            "roles"
        }
+   </pre>
+4. Configure Role scope in the MVC Application
+
+<pre>
+  builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+    {
+        options.Authority = "https://localhost:5005"; // IdentityServer URL
+        options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+        options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+        options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+        //options.Scope.Add("openid"); // OpenID Connect scope                      Thease claims automatically added by Identity server so we don;t want to specify here
+        //options.Scope.Add("profile"); // Profile scope for user information       Thease claims automatically added by Identity server so we don;t want to specify here
+        options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+    
+        options.Scope.Add("address"); // Address scope
+        options.Scope.Add("email"); // Email scope
+        **options.Scope.Add("roles"); // Adding roles scope**
+        options.SaveTokens = true; // Save tokens in the authentication properties
+        options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+    });
+</pre>
+
+5.  Add Token validation option in the MVC application
+   <pre>
+     builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "https://localhost:5005"; // IdentityServer URL
+    options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+    options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    //options.Scope.Add("openid"); // OpenID Connect scope                      Thease claims automatically added by Identity server so we don;t want to specify here
+    //options.Scope.Add("profile"); // Profile scope for user information       Thease claims automatically added by Identity server so we don;t want to specify here
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+
+    options.Scope.Add("address"); // Address scope
+    options.Scope.Add("email"); // Email scope
+    options.Scope.Add("roles"); // Adding roles scope
+    options.SaveTokens = true; // Save tokens in the authentication properties
+    options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+
+    //Rolebased Authorization
+**    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        NameClaimType = JwtClaimTypes.Name,
+        RoleClaimType = JwtClaimTypes.Role
+    };**
+});
    </pre>
