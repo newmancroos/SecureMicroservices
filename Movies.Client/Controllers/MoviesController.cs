@@ -170,5 +170,10 @@ namespace Movies.Client.Controllers
         //{
         //    return _context.Movie.Any(e => e.Id == id);
         //}
+
+        public async Task<IActionResult> OnlyAdmin()
+        {
+            return View();
+        }
     }
 }

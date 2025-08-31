@@ -1,5 +1,7 @@
 ﻿using Duende.AccessTokenManagement;
+using Duende.IdentityModel;
 using Duende.IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,9 +34,17 @@ builder.Services.AddAuthentication(options =>
 
     options.Scope.Add("address"); // Address scope
     options.Scope.Add("email"); // Email scope
-
+    options.Scope.Add("roles"); // Adding roles scope
+    options.ClaimActions.MapUniqueJsonKey("role", "role"); // Map the "role" claim
     options.SaveTokens = true; // Save tokens in the authentication properties
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+
+    //Rolebased Authorization
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        NameClaimType = JwtClaimTypes.Name,
+        RoleClaimType = JwtClaimTypes.Role
+    };
 });
 
 //HttpClient Configurations

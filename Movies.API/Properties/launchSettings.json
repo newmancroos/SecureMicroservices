@@ -7,7 +7,7 @@
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:5001",
-      "launchBrowser": true
+      "launchBrowser": false
 
     }
   },
