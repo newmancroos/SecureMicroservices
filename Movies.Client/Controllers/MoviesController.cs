@@ -22,7 +22,7 @@ namespace Movies.Client.Controllers
         // GET: Movies
         public async Task<IActionResult> Index()
         {
-            LogTokenAndClaims();
+            await LogTokenAndClaims();
             var movies = await _movieApiService.GetMovies();
             return View(movies);
         }

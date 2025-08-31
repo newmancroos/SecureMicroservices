@@ -53,7 +53,9 @@ public class Config
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
-                    "movieAPI"
+                    "movieAPI",
+                    IdentityServerConstants.StandardScopes.Address,
+                    IdentityServerConstants.StandardScopes.Email
                 }
             }
         };
@@ -73,7 +75,9 @@ public class Config
         new IdentityResource[]
         {
             new IdentityResources.OpenId(),
-            new IdentityResources.Profile()
+            new IdentityResources.Profile(),
+            new IdentityResources.Address(),
+            new IdentityResources.Email()
         };
 
     public static List<TestUser> TestUsers=>

@@ -1,6 +1,7 @@
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using IdentityServer;
+using IdentityServerHost;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,8 +14,9 @@ builder.Services.AddIdentityServer()
     .AddInMemoryIdentityResources(Config.IdentityResources)
     //.AddInMemoryApiResources(Config.ApiResources)
     .AddInMemoryApiScopes(Config.ApiScopes)
-    .AddTestUsers(Config.TestUsers)
-    .AddDeveloperSigningCredential();
+    //.AddTestUsers(Config.TestUsers)     //We created this user
+    .AddTestUsers(TestUsers.Users)   // Identity server automatically has these users
+    .AddDeveloperSigningCredential();  
 
 builder.Services.AddAuthentication();
 

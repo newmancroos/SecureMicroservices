@@ -25,7 +25,8 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options=>
 {
-    options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient"));
+    //options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient"));  // Due to Hybrid flow
+    options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient", "movies_mvc_clinet"));
 });
 var app = builder.Build();
 

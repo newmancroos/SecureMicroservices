@@ -25,10 +25,14 @@ builder.Services.AddAuthentication(options =>
     options.Authority = "https://localhost:5005"; // IdentityServer URL
     options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
     options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
-    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing Hybrid flow
-    options.Scope.Add("openid"); // OpenID Connect scope
-    options.Scope.Add("profile"); // Profile scope for user information
-    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of Hybrid flow*************
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    //options.Scope.Add("openid"); // OpenID Connect scope                      Thease claims automatically added by Identity server so we don;t want to specify here
+    //options.Scope.Add("profile"); // Profile scope for user information       Thease claims automatically added by Identity server so we don;t want to specify here
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+
+    options.Scope.Add("address"); // Address scope
+    options.Scope.Add("email"); // Email scope
+
     options.SaveTokens = true; // Save tokens in the authentication properties
     options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
 });
@@ -36,6 +40,8 @@ builder.Services.AddAuthentication(options =>
 //HttpClient Configurations
 //1. Create an HttpClient used for accessing the MovieApi
 builder.Services.AddTransient<AuthenticationDelegatingHandler>();
+
+
 //Configuring HttpClient to access Api
 builder.Services.AddHttpClient("MovieAPIClient", client =>
 {
@@ -46,13 +52,18 @@ builder.Services.AddHttpClient("MovieAPIClient", client =>
 
 //Configuraing HttpClient to access IDP
 
-builder.Services.AddHttpClient("IDPClient", client =>
-{
-    client.BaseAddress = new Uri("https://localhost:5005");
-    client.DefaultRequestHeaders.Clear();
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
-});
+//builder.Services.AddHttpClient("IDPClient", client =>
+//{
+//    client.BaseAddress = new Uri("https://localhost:5005");
+//    client.DefaultRequestHeaders.Clear();
+//    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+//});
 
+
+/// As we use hybrid flow we don;t need to call the IdentityServer end-point for token so we can remove the below code
+/// Instead we will use service.AddHttpContextAccessor() method to access the token
+/// 
+/*
 builder.Services.AddSingleton(new ClientCredentialsTokenRequest
 {
     Address = "https://localhost:5005/connect/token",
@@ -60,6 +71,10 @@ builder.Services.AddSingleton(new ClientCredentialsTokenRequest
     ClientSecret = "secret",
     Scope = "movieAPI"
 });
+*/
+
+builder.Services.AddHttpContextAccessor();  //*** Hybrid flow
+
 
 var app = builder.Build();
 

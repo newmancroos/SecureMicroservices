@@ -122,6 +122,7 @@ public class MovieApiService : IMovieApiService
         var response = await httpClient.PutAsync(uri, content);
 
         response.EnsureSuccessStatusCode();
-       
+
         return movie;
+    }
 }
