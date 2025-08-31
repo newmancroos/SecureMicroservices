@@ -346,4 +346,351 @@ Typically uses a code id_token or code token response type, combining aspects of
 <img width="679" height="387" alt="image" src="https://github.com/user-attachments/assets/fc42b17a-5b7b-483b-a510-85eb322e38f5" />
 
 
+## What does RequirePkce (Proff Key do?
 
+In IdentityServer, "Require PKCE" forces applications to use Proof Key for Code Exchange (PKCE) when using the Authorization Code Grant flow, adding a crucial layer of security for public clients (like mobile and single-page apps) by preventing authorization code interception attacks. The client generates a unique secret (code verifier) and a derived challenge, which the server verifies during token exchange, ensuring the same client that initiated the flow receives the access token. 
+How it Works 
+**1. Code Verifier & Challenge Creation:**
+Before starting the authorization request, the client creates a random string called a "code verifier". It then generates a base64-encoded hash of this verifier, called the "code challenge," which is sent to the authorization server.
+
+**2. Code Challenge Transmission:**
+The client sends the code challenge to the IdentityServer's authorization endpoint to obtain an authorization code.
+
+**3. PKCE Enforcement:**
+When the "Require PKCE" setting is enabled, the IdentityServer stores the received code challenge.
+
+**4. Token Exchange & Verification:**
+When the client exchanges the authorization code for an access token, it must also send the original, un-hashed "code verifier".
+
+**5. Security Check:**
+The IdentityServer verifies that the code verifier, when hashed and transformed, matches the code challenge it previously stored for that authorization code.
+
+**6. Token Issuance:**
+Only if the verifier and challenge match will the IdentityServer issue the access token; otherwise, the request is rejected.
+
+**Why It's Important**
+
+**Secures Public Clients:**
+.PKCE is vital for public clients (like single-page applications and native mobile apps) that cannot securely store client secrets. 
+
+**Prevents Code Interception:**
+It protects against authorization code interception attacks, where a malicious application might capture an authorization code and use it to obtain an access token. 
+
+**Ensures Client Authenticity:**
+PKCE verifies that the client requesting the token is the same one that initiated the authorization request, preventing impersonation
+
+
+## Changes on the existing code due to Hybrid flow:
+
+### <ins> In Identity Project </ins>
+  
+1. In IdentityProvider project, We don;t need two separate clients for Api and MVC.
+2. Chnage AllowedGrantTypes from GrantType.Code to GrantTypes.Hybrid
+3. Add RequirePkce = false as we don;t strckly check the challenge
+4. Add **movieApi** scops to AllowesScope to MVC client
+   
+<pre>
+  new Client
+{
+    ClientId="movies_mvc_clinet",
+    ClientName="Movies MVC Web App",
+    //AllowedGrantTypes=GrantTypes.Code,
+    AllowedGrantTypes=GrantTypes.Hybrid,  //becomes interactive client
+    RequirePkce=false,  // It need only for Code flow. It rquire authorization code base token request 
+    AllowRememberConsent=false,
+    RedirectUris= new List<string>()
+    {
+        "https://localhost:5002/signin-oidc"
+    },
+    PostLogoutRedirectUris= new List<string>()
+    {
+        "https://localhost:5002/signout-callback-oidc"
+    },
+    ClientSecrets= new List<Secret>()
+    {
+        new Secret("secret".Sha256())
+    },
+    AllowedScopes= new List<string>()
+    {
+        IdentityServerConstants.StandardScopes.OpenId,
+        IdentityServerConstants.StandardScopes.Profile,
+        "movieAPI"
+    }
+}
+  
+</pre>
+
+### <ins> In Movie.Client MVC Project </ins>
+
+1. In program.cs, in AddAuthentication block, **add id_token** on top of **code**
+2. In program.cs, in AddAuthentication block, add **Scope** "**movieAPI**" on top of **openid** and **profile**
+
+<pre>
+  builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "https://localhost:5005"; // IdentityServer URL
+    options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+    options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    options.Scope.Add("openid"); // OpenID Connect scope
+    options.Scope.Add("profile"); // Profile scope for user information
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+    options.SaveTokens = true; // Save tokens in the authentication properties
+    options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+});
+</pre>
+
+ 
+3.  Remove AddHttpClient("IDPClient") block and remove registering **ClientCredentialsTokenRequest** as we don't need call to Identity end-point
+<pre>
+//Configuraing HttpClient to access IDP
+
+//builder.Services.AddHttpClient("IDPClient", client =>
+//{
+//    client.BaseAddress = new Uri("https://localhost:5005");
+//    client.DefaultRequestHeaders.Clear();
+//    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+//});
+
+
+/// As we use hybrid flow we don;t need to call the IdentityServer end-point for token so we can remove the below code
+/// Instead we will use service.AddHttpContextAccessor() method to access the token
+/// 
+/*
+builder.Services.AddSingleton(new ClientCredentialsTokenRequest
+{
+    Address = "https://localhost:5005/connect/token",
+    ClientId = "movieClient",
+    ClientSecret = "secret",
+    Scope = "movieAPI"
+});
+*/
+</pre>
+
+5. In program.cs register HttpClient as the access token we can get it from here
+  <pre>
+    builder.Services.AddHttpContextAccessor();
+  </pre>
+  
+4. In **AuthenticationDelegatingHandler**  remove calls to IdentityServer end-point related codes and inject IHttpContextAccessor mand get the token and add it to the request
+<pre>
+public class AuthenticationDelegatingHandler:DelegatingHandler
+{
+    //private readonly IHttpClientFactory _httpClientFactory;
+    //private readonly ClientCredentialsTokenRequest _tokenRequest;
+
+    //public AuthenticationDelegatingHandler(IHttpClientFactory httpClientFactory, ClientCredentialsTokenRequest tokenRequest)
+    //{
+    //    _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    //    _tokenRequest = tokenRequest ?? throw new ArgumentNullException(nameof(tokenRequest));
+    //}
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public AuthenticationDelegatingHandler(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        /// Due to ***Hybrid flow we don;t need to call IDP for token
+        
+        //var httpClient = _httpClientFactory.CreateClient("IDPClient");    
+        //var tokenResponse = await httpClient.RequestClientCredentialsTokenAsync(_tokenRequest);
+
+        //if (tokenResponse.IsError)
+        //{
+        //    throw new Exception($"Something went wrong while requesting token: {tokenResponse.Error}");
+        //}
+        //request.SetBearerToken(tokenResponse!.AccessToken!);
+
+        var accessToeken  = await _httpContextAccessor!.HttpContext!.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+        if(!string.IsNullOrEmpty(accessToeken))
+        {
+            request.SetBearerToken(accessToeken);
+        }
+        else
+        {
+            throw new Exception("Access token is null or empty");
+        }
+
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
+</pre>
+
+5. FInally we need to change Claims based authorization in MovieAPI as we are using only one client and removed MovieApi Client
+   
+   <pre>
+     builder.Services.AddAuthorization(options=>
+      {
+          //options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movieClient")); // Due to hybrid flow and we are using one client for APi and MVC
+          options.AddPolicy("ClientIdPolicy", policy => policy.RequireClaim("client_id", "movies_mvc_client"));
+      });
+   </pre>
+
+
+## Claim Based Authorization:
+
+<img width="1121" height="655" alt="image" src="https://github.com/user-attachments/assets/66fa8569-d9aa-4215-a6b4-4a3f467d0758" />
+
+
+- We may have multiple Claims for a user like below
+
+  <pre>
+    public static class TestUsers
+{
+    public static List<TestUser> Users
+    {
+        get
+        {
+            var address = new
+            {
+                street_address = "One Hacker Way",
+                locality = "Heidelberg",
+                postal_code = "69118",
+                country = "Germany"
+            };
+                
+            return new List<TestUser>
+            {
+                new TestUser
+                {
+                    SubjectId = "1",
+                    Username = "alice",
+                    Password = "a1",
+                    Claims =
+                    {
+                        new Claim(JwtClaimTypes.Name, "Alice Smith"),
+                        new Claim(JwtClaimTypes.GivenName, "Alice"),
+                        new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                        new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
+                        new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                        new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
+                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
+                    }
+                },
+                new TestUser
+                {
+                    SubjectId = "2",
+                    Username = "bob",
+                    Password = "b1",
+                    Claims =
+                    {
+                        new Claim(JwtClaimTypes.Name, "Bob Smith"),
+                        new Claim(JwtClaimTypes.GivenName, "Bob"),
+                        new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                        new Claim(JwtClaimTypes.Email, "BobSmith@email.com"),
+                        new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                        new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
+                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
+                    }
+                }
+            };
+        }
+    }
+}
+  </pre>
+but we need to change the Identity configuration for include these claim as part of the token.
+
+<pre>
+public static IEnumerable<Client> Clients =>
+    new Client[]
+    {
+        new Client
+        { 
+            ClientId="movieClient",
+            AllowedGrantTypes=GrantTypes.ClientCredentials,
+            ClientSecrets=
+            { 
+                new Secret("secret".Sha256())
+            },
+            AllowedScopes={"movieAPI"}
+        },
+          new Client
+          {
+              ClientId="movies_mvc_clinet",
+              ClientName="Movies MVC Web App",
+              //AllowedGrantTypes=GrantTypes.Code,
+              AllowedGrantTypes=GrantTypes.Hybrid,  //becomes interactive client
+              RequirePkce=false,  // It need only for Code flow. It rquire authorization code base token request 
+              AllowRememberConsent=false,
+              RedirectUris= new List<string>()
+              {
+                  "https://localhost:5002/signin-oidc"
+              },
+              PostLogoutRedirectUris= new List<string>()
+              {
+                  "https://localhost:5002/signout-callback-oidc"
+              },
+              ClientSecrets= new List<Secret>()
+              {
+                  new Secret("secret".Sha256())
+              },
+              AllowedScopes= new List<string>()
+              {
+                  IdentityServerConstants.StandardScopes.OpenId,
+                  IdentityServerConstants.StandardScopes.Profile,
+                  "movieAPI",
+                  IdentityServerConstants.StandardScopes.Address,
+                  IdentityServerConstants.StandardScopes.Email
+              }
+          }
+      };
+      public static IEnumerable<IdentityResource> IdentityResources=>
+        new IdentityResource[]
+        {
+            new IdentityResources.OpenId(),
+            new IdentityResources.Profile(),
+            new IdentityResources.Address(),
+            new IdentityResources.Email()
+        };
+</pre>
+
+Finally we need to map the Identity Server user to the new User class in the Identity project, and alosin the MVC Client project we need to specify in the program.cs
+
+- Identity Project
+<pre>
+  // Add services to the container.
+builder.Services.AddIdentityServer()
+    .AddInMemoryClients(Config.Clients)
+    .AddInMemoryIdentityResources(Config.IdentityResources)
+    //.AddInMemoryApiResources(Config.ApiResources)
+    .AddInMemoryApiScopes(Config.ApiScopes)
+    //.AddTestUsers(Config.TestUsers)     //We created this user
+    .AddTestUsers(TestUsers.Users)   // Identity server automatically has these users
+    .AddDeveloperSigningCredential();  
+
+</pre>
+
+- MVC Project
+<pre>
+  builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "https://localhost:5005"; // IdentityServer URL
+    options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
+    options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
+    options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
+    //options.Scope.Add("openid"); // OpenID Connect scope                      Thease claims automatically added by Identity server so we don;t want to specify here
+    //options.Scope.Add("profile"); // Profile scope for user information       Thease claims automatically added by Identity server so we don;t want to specify here
+    options.Scope.Add("movieAPI"); // ***************API scope to access the Movie API as part of ***Hybrid flow*************
+
+    options.Scope.Add("address"); // Address scope
+    options.Scope.Add("email"); // Email scope
+
+    options.SaveTokens = true; // Save tokens in the authentication properties
+    options.GetClaimsFromUserInfoEndpoint = true; // Retrieve claims from UserInfo endpoint
+});
+</pre>
