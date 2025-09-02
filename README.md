@@ -825,3 +825,7 @@ To allow rolebased authorization
     };</b>
 });
    </pre>
+
+
+### To Implement Entity Framework instead of InMemory database follow the link
+https://docs.duendesoftware.com/identityserver/quickstarts/4-entity-framework/
