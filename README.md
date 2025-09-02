@@ -1,6 +1,10 @@
 # SecureMicroservices
 
+## Note:
+  Three banches. Main contain **Authorization Code** flow. hybridFlow on **Hybrid flow**  and then Ocelet branch has **Ocelet Gateway** implementation
 
+
+  
 ## Adding Identituservice UI
 * Refer this Link : https://github.com/DuendeArchive/IdentityServer.Quickstart.UI
   1. Run the following command in Identityserver project terminal
