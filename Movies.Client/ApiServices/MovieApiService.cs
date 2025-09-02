@@ -56,7 +56,8 @@ public class MovieApiService : IMovieApiService
         //Refactor code using HttpClientFactory
 
         var httpClient = _httpClientFactory.CreateClient("MovieAPIClient");
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/movies/");
+        //var request = new HttpRequestMessage(HttpMethod.Get, "/api/movies/");   // We upstream API url to movies not api/movies in Ocelot Gateway
+        var request = new HttpRequestMessage(HttpMethod.Get, "/movies");
         var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         var movieContent = await response.Content.ReadAsStringAsync();

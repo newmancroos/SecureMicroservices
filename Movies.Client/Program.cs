@@ -54,9 +54,18 @@ builder.Services.AddTransient<AuthenticationDelegatingHandler>();
 
 
 //Configuring HttpClient to access Api
+//Removing this because now we are using Ocelot API gateway
+//builder.Services.AddHttpClient("MovieAPIClient", client =>
+//{
+//    client.BaseAddress = new Uri("https://localhost:5001");
+//    client.DefaultRequestHeaders.Clear();
+//    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+//}).AddHttpMessageHandler<AuthenticationDelegatingHandler>();
+
+
 builder.Services.AddHttpClient("MovieAPIClient", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:5001");
+    client.BaseAddress = new Uri("https://localhost:5010");
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 }).AddHttpMessageHandler<AuthenticationDelegatingHandler>();
@@ -69,6 +78,9 @@ builder.Services.AddHttpClient("IDPClient", client =>
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 });
+
+
+
 
 
 /// As we use hybrid flow we don;t need to call the IdentityServer end-point for token so we can remove the below code
