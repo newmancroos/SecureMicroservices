@@ -171,9 +171,12 @@ namespace Movies.Client.Controllers
         //    return _context.Movie.Any(e => e.Id == id);
         //}
 
+        [Authorize(Roles ="admin")]
         public async Task<IActionResult> OnlyAdmin()
         {
-            return View();
+            var userInfo = await _movieApiService.GetUserInfo();
+
+            return View(userInfo);
         }
     }
 }

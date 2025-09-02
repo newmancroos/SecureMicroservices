@@ -16,9 +16,13 @@ builder.Services.AddIdentityServer()
     .AddInMemoryApiScopes(Config.ApiScopes)
     //.AddTestUsers(Config.TestUsers)     //We created this user
     .AddTestUsers(TestUsers.Users)   // Identity server automatically has these users
-    .AddDeveloperSigningCredential();  
+    .AddDeveloperSigningCredential();
 
 builder.Services.AddAuthentication();
+        //.AddCookie("Cookies", options =>
+        //{
+        //    options.AccessDeniedPath = "/Account/AccessDenied"; // Set your custom path here
+        //});
 
 var app = builder.Build();
 

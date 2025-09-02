@@ -25,6 +25,7 @@ builder.Services.AddAuthentication(options =>
 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 {
     options.Authority = "https://localhost:5005"; // IdentityServer URL
+    //options.AccessDeniedPath = "/Account/AccessDenied"; // Access Denied path   // Not working
     options.ClientId = "movies_mvc_clinet"; // Client ID registered in IdentityServer
     options.ClientSecret= "secret"; // Client Secret registered in IdentityServer
     options.ResponseType = "code id_token"; // Use Authorization Code flow/ *********id_token added on top of code flow for user authentication while implementing ***Hybrid flow
@@ -62,12 +63,12 @@ builder.Services.AddHttpClient("MovieAPIClient", client =>
 
 //Configuraing HttpClient to access IDP
 
-//builder.Services.AddHttpClient("IDPClient", client =>
-//{
-//    client.BaseAddress = new Uri("https://localhost:5005");
-//    client.DefaultRequestHeaders.Clear();
-//    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
-//});
+builder.Services.AddHttpClient("IDPClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5005");
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+});
 
 
 /// As we use hybrid flow we don;t need to call the IdentityServer end-point for token so we can remove the below code

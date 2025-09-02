@@ -1,20 +1,56 @@
-﻿using Movies.Client.Models;
-using Duende.IdentityModel.Client;
+﻿using Duende.IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Movies.Client.Models;
 using Newtonsoft.Json;
-using System.Net.Http.Json;
 using System.Text;
-using Duende.AccessTokenManagement;
-using System.Security.Cryptography;
-using System;
 namespace Movies.Client.ApiServices;
 
 public class MovieApiService : IMovieApiService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    public MovieApiService(IHttpClientFactory httpClientFactory)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public MovieApiService(IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _httpContextAccessor = httpContextAccessor;
     }
+
+    public async Task<UserInfoViewModel> GetUserInfo()
+    {
+        var idpClient = _httpClientFactory.CreateClient("IDPClient");
+
+        var metaDataResponse = await idpClient.GetDiscoveryDocumentAsync();
+
+        if(metaDataResponse.IsError)
+        {
+            throw new Exception($"Something went wrong while getting the discovery document: {metaDataResponse.Error}");
+        }
+
+        var accessToken = await _httpContextAccessor!.HttpContext!.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+
+        var userInfoResponse = await idpClient.GetUserInfoAsync(new UserInfoRequest
+        {
+            Address = metaDataResponse.UserInfoEndpoint,
+            Token = accessToken
+        });
+
+        if (userInfoResponse.IsError)
+        {
+            throw new Exception($"Something went wrong while getting the user info: {userInfoResponse.Error}");
+        }
+
+        var userInfoDictionary = new Dictionary<string, string>();
+
+        foreach (var claim in userInfoResponse.Claims)
+        {
+            userInfoDictionary.Add(claim.Type, claim.Value);
+        }
+
+        return new UserInfoViewModel(userInfoDictionary);
+
+    }
+
     public async Task<IEnumerable<Movie>> GetMovies()
     {
         //Refactor code using HttpClientFactory
@@ -125,4 +161,15 @@ public class MovieApiService : IMovieApiService
 
         return movie;
     }
+    public Task<API.Models.Movie> CreateMovies(API.Models.Movie movie)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<API.Models.Movie> UpdateMovie(API.Models.Movie movie)
+    {
+        throw new NotImplementedException();
+    }
+
+
 }
