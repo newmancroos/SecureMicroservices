@@ -1,5 +1,12 @@
 # SecureMicroservices
 
+
+## Branch Details
+  * Main has separate GrantType  Client Credential and Code
+  * Hybrid has uses Hybrid grant type
+  * Oceles branch uses Hybrid with Ocelet Api gateway
+
+
 ## Note:
   Three banches. Main contain **Authorization Code** flow. hybridFlow on **Hybrid flow**  and then Ocelet branch has **Ocelet Gateway** implementation
 
